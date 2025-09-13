@@ -17,6 +17,11 @@ const app = express();
 app.use(cors());
 app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 // Mapowanie kursów na priceId Stripe (16 kursów + full_access) - LIVE MODE
 const coursePriceIds = {
     1: 'price_1RtPFoJLuu6b086bmfvVO4G8', // Kinematyka
@@ -79,8 +84,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
                 userId,
                 courseId
             },
-            success_url: `${process.env.FRONTEND_URL}/?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.FRONTEND_URL}/kurs`,
+            success_url: `https://fizykastatkiemv1.netlify.app/?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `https://fizykastatkiemv1.netlify.app/kurs`,
         });
         res.json({ id: session.id });
     } catch (err) {
