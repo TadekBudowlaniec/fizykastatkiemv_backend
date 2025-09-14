@@ -24,7 +24,7 @@ app.get('/api/health', (req, res) => {
 
 // Mapowanie kursów na priceId Stripe (16 kursów + full_access) - LIVE MODE
 const coursePriceIds = {
-    1: 'price_1RtPFoJLuu6b086bmfvVO4G8', // Kinematyka
+    1: 'price_1S5qqfJLuu6b086bn5K6W4wN', // Kinematyka
     2: 'price_1RtPGOJLuu6b086b1QN5l4DE', // Dynamika
     3: 'price_1Rgt0yJLuu6b086b115h7OXM', // Praca moc energia
     4: 'price_1RtPKTJLuu6b086b3wG0IiaV', // Bryła Sztywna
@@ -45,7 +45,7 @@ const coursePriceIds = {
 
 // Mapowanie priceId na course_id
 const priceToCourseId = {
-    'price_1RtPFoJLuu6b086bmfvVO4G8': 1, // Kinematyka
+    'price_1S5qqfJLuu6b086bn5K6W4wN': 1, // Kinematyka
     'price_1RtPGOJLuu6b086b1QN5l4DE': 2, // Dynamika
     'price_1Rgt0yJLuu6b086b115h7OXM': 3, // Praca moc energia
     'price_1RtPKTJLuu6b086b3wG0IiaV': 4, // Bryła Sztywna
@@ -84,8 +84,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
                 userId,
                 courseId
             },
-            success_url: `https://fizykastatkiemv1.netlify.app/?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `https://fizykastatkiemv1.netlify.app/kurs`,
+            success_url: `https://remarkable-cascaron-72cefc.netlify.app/?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `https://remarkable-cascaron-72cefc.netlify.app/kurs`,
         });
         res.json({ id: session.id });
     } catch (err) {
