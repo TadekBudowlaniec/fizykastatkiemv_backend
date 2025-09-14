@@ -3,9 +3,8 @@ const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 
 require('dotenv').config();
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-// Osobny klient Stripe do trybu testowego (jeśli podany)
-const stripeTest = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST || process.env.STRIPE_SECRET_KEY);
+// Używaj testowego klucza jeśli dostępny, w przeciwnym razie live
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY_TEST || process.env.STRIPE_SECRET_KEY);
 
 // Inicjalizacja Supabase (preferuj SERVICE_KEY na backendzie)
 const supabase = createClient(
@@ -46,7 +45,7 @@ const coursePriceIds = {
 // Mapowanie priceId na course_id
 const priceToCourseId = {
     'price_1S5qqfJLuu6b086bn5K6W4wN': 1, // Kinematyka
-    'price_1RtPGOJLuu6b086b1QN5l4DE': 2, // Dynamika
+    'price_1S5qqfJLuu6b086bn5K6W4wN': 2, // Dynamika
     'price_1Rgt0yJLuu6b086b115h7OXM': 3, // Praca moc energia
     'price_1RtPKTJLuu6b086b3wG0IiaV': 4, // Bryła Sztywna
     'price_1RtPKkJLuu6b086b2lfhBfDX': 5, // Ruch Drgający
@@ -84,8 +83,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
                 userId,
                 courseId
             },
-            success_url: `https://remarkable-cascaron-72cefc.netlify.app/?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `https://remarkable-cascaron-72cefc.netlify.app/kurs`,
+            success_url: `https://fizykastatkiemv1.netlify.app/?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `https://fizykastatkiemv1.netlify.app/kurs`,
         });
         res.json({ id: session.id });
     } catch (err) {
@@ -99,10 +98,14 @@ app.post('/api/create-checkout-session', async (req, res) => {
 app.post('/api/webhook', async (req, res) => {
     const sig = req.headers['stripe-signature'];
     let event;
+    console.log('=== WEBHOOK RECEIVED ===');
+    console.log('Headers:', req.headers);
+    console.log('Body length:', req.rawBody ? req.rawBody.length : 'no body');
 
     try {
         event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
         console.log('Webhook received:', event.type);
+        console.log('Event data:', JSON.stringify(event.data, null, 2));
     } catch (err) {
         console.error('Webhook signature verification failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -182,21 +185,26 @@ app.post('/api/webhook', async (req, res) => {
                 }
             }
 
-            // Dodaj wpisy do tabeli enrollments
+             // Dodaj wpisy do tabeli enrollments
+            console.log('Adding enrollments for courses:', courseIds);
             for (const courseId of courseIds) {
-                const { error } = await supabase
+                const enrollmentData = {
+                    user_id: session.metadata.userId,
+                    course_id: courseId,
+                    access_granted: true,
+                    enrolled_at: new Date().toISOString()
+                };
+                console.log('Inserting enrollment:', enrollmentData);
+                
+                const { data, error } = await supabase
                     .from('enrollments')
-                    .upsert({
-                        user_id: session.metadata.userId,
-                        course_id: courseId,
-                        access_granted: true,
-                        enrolled_at: new Date().toISOString()
-                    });
+                    .upsert(enrollmentData);
 
                 if (error) {
                     console.error('Error adding enrollment for course', courseId, ':', error);
                 } else {
                     console.log(`✅ Access granted for user ${session.metadata.userId} to course ${courseId}`);
+                    console.log('Enrollment data:', data);
                 }
             }
 
