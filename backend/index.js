@@ -83,8 +83,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
                 userId,
                 courseId
             },
-            success_url: `https://remarkable-cascaron-72cefc.netlify.app//?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `https://remarkable-cascaron-72cefc.netlify.app//kurs`,
+            success_url: `http://localhost:3000/?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `http://localhost:3000/kurs`,
         });
         res.json({ id: session.id });
     } catch (err) {
@@ -98,9 +98,6 @@ app.post('/api/create-checkout-session', async (req, res) => {
 app.post('/api/webhook', async (req, res) => {
     const sig = req.headers['stripe-signature'];
     let event;
-    console.log('=== WEBHOOK RECEIVED ===');
-    console.log('Headers:', req.headers);
-    console.log('Body length:', req.rawBody ? req.rawBody.length : 'no body');
 
     try {
         event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
@@ -185,20 +182,19 @@ app.post('/api/webhook', async (req, res) => {
                 }
             }
 
-             // Dodaj wpisy do tabeli enrollments
-            console.log('Adding enrollments for courses:', courseIds);
+            // Dodaj wpisy do tabeli enrollments
             for (const courseId of courseIds) {
-                const enrollmentData = {
-                    user_id: session.metadata.userId,
-                    course_id: courseId,
-                    access_granted: true,
-                    enrolled_at: new Date().toISOString()
-                };
-                console.log('Inserting enrollment:', enrollmentData);
-                
                 const { data, error } = await supabase
                     .from('enrollments')
-                    .upsert(enrollmentData);
+                    .upsert({
+                        user_id: session.metadata.userId,
+                        course_id: courseId,
+                        access_granted: true,
+                        enrolled_at: new Date().toISOString()
+                    }, { 
+                        onConflict: 'user_id,course_id',
+                        ignoreDuplicates: false 
+                    });
 
                 if (error) {
                     console.error('Error adding enrollment for course', courseId, ':', error);
