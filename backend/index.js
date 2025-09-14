@@ -83,8 +83,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
                 userId,
                 courseId
             },
-            success_url: `http://localhost:3000/?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `http://localhost:3000/kurs`,
+            success_url: `https://remarkable-cascaron-72cefc.netlify.app//?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `https://remarkable-cascaron-72cefc.netlify.app//kurs`,
         });
         res.json({ id: session.id });
     } catch (err) {
